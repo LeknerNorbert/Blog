@@ -7,7 +7,7 @@ namespace BlogAPI.Models
         public int Id { get; set; }
         [StringLength(50, MinimumLength = 1)]
         public string? Title { get; set; }
-        [StringLength (500, MinimumLength = 1)]
+        [StringLength (1000, MinimumLength = 1)]
         public string? Entry { get; set; }
         public DateTime PublishDate { get; set; } = DateTime.Now;
         public bool IsArchived { get; set; } = false;

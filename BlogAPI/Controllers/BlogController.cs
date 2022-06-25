@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Net.Http;
 
@@ -75,9 +76,10 @@ namespace BlogAPI.Controllers
         }
 
         [HttpGet]
-        public IEnumerable<Blog> Read()
+        public IQueryable<Blog> Read()
         {
-            IEnumerable<Blog> blogs = _db.Blogs;
+            IQueryable<Blog> blogs = _db.Blogs
+                .Include(b => b.Author);
 
             return blogs;
         }
@@ -133,5 +135,19 @@ namespace BlogAPI.Controllers
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
+
+        //[HttpDelete]
+        //public HttpResponseMessage Delete(int blogId)
+        //{
+        //    try
+        //    {
+        //        Blog? deletedBlog = _db.Blogs.
+        //    }
+        //    catch (Exception)
+        //    {
+
+        //        throw;
+        //    }
+        //}
     }
 }

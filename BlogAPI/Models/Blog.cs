@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using BlogAPI.Models.UserManagement;
+using System.ComponentModel.DataAnnotations;
 
 namespace BlogAPI.Models
 {

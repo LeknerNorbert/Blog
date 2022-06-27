@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace BlogAPI.Models
+namespace BlogAPI.Models.UserManagement
 {
     public class User
     {
@@ -11,7 +11,9 @@ namespace BlogAPI.Models
         public string? Password { get; set; }
         [Required]
         public string? Nickname { get; set; }
-        public bool IsLocked { get; set; }
+        public bool IsArchived { get; set; }
+        public ICollection<Blog>? Blogs { get; set; }
+        public ICollection<Role>? Roles { get; set; }
         // A jogosultsági szinteket majd egy külön táblába fogom tenni, hogy 
         // ne lehessen még véletlenül se módosítani azt API-on keresztül
     }

@@ -1,4 +1,6 @@
 ﻿using BlogAPI.Models;
+using BlogAPI.Models.UserManagement;
+using BlogAPI.Models.ViewModels;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +11,7 @@ using System.Net.Http;
 
 namespace BlogAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]/[action]")]
     [ApiController]
     public class BlogController : ControllerBase
     {
@@ -76,15 +78,28 @@ namespace BlogAPI.Controllers
         }
 
         [HttpGet]
-        public IQueryable<Blog> Read()
+        public IQueryable<BlogViewModel> Read(int page)
         {
-            IQueryable<Blog> blogs = _db.Blogs
-                .Include(b => b.Author);
+            IQueryable<BlogViewModel> blogs = _db.Blogs
+                .Where(b => b.IsArchived == false)
+                .Include(b => b.Author)
+                .OrderByDescending(b => b.PublishDate)
+                .Skip((page - 1) * 10)
+                .Take(10)
+                .Select(b => new BlogViewModel
+                {
+                    Id = b.Id,
+                    Title = b.Title,
+                    Entry = b.Entry,
+                    PublishDate = b.PublishDate,
+                    IsArchived = b.IsArchived,
+                    AuthorNickname = b.Author.IsArchived ? "Deleted user" : b.Author.Nickname
+                });
 
             return blogs;
         }
 
-        [HttpPatch]
+        [HttpPost]
         public HttpResponseMessage Update(Blog updatedBlog)
         {
             if(!ModelState.IsValid || updatedBlog == null)
@@ -136,18 +151,46 @@ namespace BlogAPI.Controllers
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
 
-        //[HttpDelete]
-        //public HttpResponseMessage Delete(int blogId)
-        //{
-        //    try
-        //    {
-        //        Blog? deletedBlog = _db.Blogs.
-        //    }
-        //    catch (Exception)
-        //    {
+        [HttpPost]
+        public HttpResponseMessage Delete(int blogId)
+        {
+            try
+            {
+                Blog? deletedBlog = _db.Blogs
+                    .FirstOrDefault(b => b.Id == blogId);
 
-        //        throw;
-        //    }
-        //}
+                if(deletedBlog == null)
+                {
+                    throw new ArgumentNullException("The blog you are trying to archived does not exist.");
+                }
+
+                deletedBlog.IsArchived = true;
+                _db.SaveChanges();
+
+            }
+            catch(ArgumentNullException ex)
+            {
+                HttpResponseMessage responseMessage = new HttpResponseMessage(HttpStatusCode.BadRequest);
+                responseMessage.Content = new StringContent(ex.Message);
+
+                return responseMessage;
+            }
+            catch(SqlException ex)
+            {
+                HttpResponseMessage responseMessage = new HttpResponseMessage(HttpStatusCode.BadRequest);
+                responseMessage.Content = new StringContent("Blog didn't archive, because database server didn't communicate.");
+
+                return responseMessage;
+            }
+            catch (Exception)
+            {
+                HttpResponseMessage responseMessage = new HttpResponseMessage(HttpStatusCode.BadRequest);
+                responseMessage.Content = new StringContent("Unknown error.");
+
+                return responseMessage;
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
     }
 }

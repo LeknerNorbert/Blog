@@ -80,21 +80,30 @@ namespace BlogAPI.Controllers
         [HttpGet]
         public IQueryable<BlogViewModel> Read(int page)
         {
-            IQueryable<BlogViewModel> blogs = _db.Blogs
-                .Where(b => b.IsArchived == false)
-                .Include(b => b.Author)
-                .OrderByDescending(b => b.PublishDate)
-                .Skip((page - 1) * 10)
-                .Take(10)
-                .Select(b => new BlogViewModel
-                {
-                    Id = b.Id,
-                    Title = b.Title,
-                    Entry = b.Entry,
-                    PublishDate = b.PublishDate,
-                    IsArchived = b.IsArchived,
-                    AuthorNickname = b.Author.IsArchived ? "Deleted user" : b.Author.Nickname
-                });
+            IQueryable<BlogViewModel> blogs;
+            
+            try
+            {
+                blogs = _db.Blogs
+               .Where(b => b.IsArchived == false)
+               .Include(b => b.Author)
+               .OrderByDescending(b => b.PublishDate)
+               .Skip((page - 1) * 10)
+               .Take(10)
+               .Select(b => new BlogViewModel
+               {
+                   Id = b.Id,
+                   Title = b.Title,
+                   Entry = b.Entry,
+                   PublishDate = b.PublishDate,
+                   IsArchived = b.IsArchived,
+                   AuthorNickname = b.Author.IsArchived ? "Deleted user" : b.Author.Nickname
+               });
+            }
+            catch (Exception)
+            {
+                throw new System.Web.Http.HttpResponseException(HttpStatusCode.BadRequest);
+            }
 
             return blogs;
         }

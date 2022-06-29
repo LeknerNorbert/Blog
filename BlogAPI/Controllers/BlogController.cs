@@ -81,24 +81,24 @@ namespace BlogAPI.Controllers
         public IQueryable<BlogViewModel> Read(int page)
         {
             IQueryable<BlogViewModel> blogs;
-            
+
             try
             {
                 blogs = _db.Blogs
-               .Where(b => b.IsArchived == false)
-               .Include(b => b.Author)
-               .OrderByDescending(b => b.PublishDate)
-               .Skip((page - 1) * 10)
-               .Take(10)
-               .Select(b => new BlogViewModel
-               {
-                   Id = b.Id,
-                   Title = b.Title,
-                   Entry = b.Entry,
-                   PublishDate = b.PublishDate,
-                   IsArchived = b.IsArchived,
-                   AuthorNickname = b.Author.IsArchived ? "Deleted user" : b.Author.Nickname
-               });
+                   .Where(b => b.IsArchived == false)
+                   .Include(b => b.Author)
+                   .OrderByDescending(b => b.PublishDate)
+                   .Skip((page - 1) * 10)
+                   .Take(10)
+                   .Select(b => new BlogViewModel
+                   {
+                       Id = b.Id,
+                       Title = b.Title,
+                       Entry = b.Entry,
+                       PublishDate = b.PublishDate,
+                       IsArchived = b.IsArchived,
+                       AuthorNickname = b.Author.IsArchived ? "Deleted user" : b.Author.Nickname
+                   });
             }
             catch (Exception)
             {
@@ -109,7 +109,7 @@ namespace BlogAPI.Controllers
         }
 
         [HttpPost]
-        public HttpResponseMessage Update(Blog updatedBlog)
+        public HttpResponseMessage Update(Blog updatedBlog, int updatedId)
         {
             if(!ModelState.IsValid || updatedBlog == null)
             {
@@ -122,7 +122,7 @@ namespace BlogAPI.Controllers
             try
             {
                 Blog? targetBlog = _db.Blogs
-                    .FirstOrDefault(b => b.Id == updatedBlog.Id);
+                    .FirstOrDefault(b => b.Id == updatedId);
 
                 if(targetBlog == null)
                 {

@@ -22,184 +22,121 @@ namespace BlogAPI.Controllers
             _db = db;
         }
 
+
         [HttpPost]
-        public HttpResponseMessage Create(Blog newBlog, int authorId)
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> Create([FromBody]BlogViewModel blog)
         {
-            // Tesztelni kell, hogy a modell valid-e, vagyis minden elvárt mezője kivan-e töltve
-            // Tesztelni kell, hogy nem null az értéke
-            // Ha valahol hiba van, akkor hibaüzenettel kell visszatérni
-
-            if (!ModelState.IsValid || newBlog == null)
+            if (!ModelState.IsValid || blog == null)
             {
-                HttpResponseMessage responseMessage = new HttpResponseMessage(HttpStatusCode.BadRequest);
-                responseMessage.Content = new StringContent("Blog didn't create, because it is null or invalid.");
-
-                return responseMessage;
+                return BadRequest("Blog is not correct");
             }
 
-            try
+            Account? author = await _db.Accounts.FindAsync(blog.AuthorId);
+
+            if (author == null)
             {
-                User? author = _db.Users
-                .FirstOrDefault(u => u.Id == authorId);
-
-                if (author == null)
-                {
-                    throw new ArgumentNullException("Blog didn't create, because author didn't exist.");
-                }
-
-                newBlog.Author = author;
-
-                _db.Blogs.Add(newBlog);
-                _db.SaveChanges();
-            }
-            catch (ArgumentNullException ex)
-            {
-                HttpResponseMessage responseMessage = new HttpResponseMessage(HttpStatusCode.BadRequest);
-                responseMessage.Content = new StringContent(ex.Message);
-
-                return responseMessage;
-            }
-            catch (SqlException)
-            {
-                HttpResponseMessage responseMessage = new HttpResponseMessage(HttpStatusCode.BadRequest);
-                responseMessage.Content = new StringContent("Blog didn't create, because database server didn't communicate.");
-
-                return responseMessage;
-            }
-            catch (Exception)
-            {
-                HttpResponseMessage responseMessage = new HttpResponseMessage(HttpStatusCode.BadRequest);
-                responseMessage.Content = new StringContent("Unknown error.");
-
-                return responseMessage;
+                return BadRequest("Author does not exist");
             }
 
-            return new HttpResponseMessage(HttpStatusCode.OK);
+            Blog createdBlog = new Blog()
+            {
+                Title = blog.Title,
+                Entry = blog.Entry,
+                Author = author
+            };
+
+            await _db.AddAsync(createdBlog);
+            await _db.SaveChangesAsync();
+
+            return Ok("Blog created");
         }
 
         [HttpGet]
-        public IQueryable<BlogViewModel> Read(int page)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> Read(int page)
         {
-            IQueryable<BlogViewModel> blogs;
+            IEnumerable<BlogViewModel> blogs = await _db.Blogs
+                .Where(b => b.IsArchived == false)
+                .Include(b => b.Author)
+                .Skip(10 * (page - 1))
+                .Take(10)
+                .Select(b => new BlogViewModel
+                {
+                    Id = b.Id,
+                    Title = b.Title,
+                    Entry = b.Entry,
+                    PublishDate = b.PublishDate,
+                    AuthorId = b.Author.Id,
+                    AuthorNickname = b.Author.Nickname
+                })
+                .ToListAsync();
 
-            try
+            return Ok(blogs);
+        }
+
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ReadArchived()
+        {
+            IEnumerable<Blog> blogs = await _db.Blogs
+                .Where(b => b.IsArchived == true)
+                .ToListAsync();
+
+            if (blogs.Count() == 0)
             {
-                blogs = _db.Blogs
-                   .Where(b => b.IsArchived == false)
-                   .Include(b => b.Author)
-                   .OrderByDescending(b => b.PublishDate)
-                   .Skip((page - 1) * 10)
-                   .Take(10)
-                   .Select(b => new BlogViewModel
-                   {
-                       Id = b.Id,
-                       Title = b.Title,
-                       Entry = b.Entry,
-                       PublishDate = b.PublishDate,
-                       IsArchived = b.IsArchived,
-                       AuthorNickname = b.Author.IsArchived ? "Deleted user" : b.Author.Nickname
-                   });
-            }
-            catch (Exception)
-            {
-                throw new System.Web.Http.HttpResponseException(HttpStatusCode.BadRequest);
+                return BadRequest("No blog archived");
             }
 
-            return blogs;
+            return Ok(blogs);
         }
 
         [HttpPost]
-        public HttpResponseMessage Update(Blog updatedBlog, int updatedId)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> Update([FromBody] BlogViewModel blog)
         {
-            if(!ModelState.IsValid || updatedBlog == null)
+            if (!ModelState.IsValid || blog == null)
             {
-                HttpResponseMessage responseMessage = new HttpResponseMessage(HttpStatusCode.BadRequest);
-                responseMessage.Content = new StringContent("Blog didn't update, because blog state was invalid or null.");
-
-                return responseMessage;
+                return BadRequest("Blog is not corrent");
             }
 
-            try
+            Blog? updatedBlog = await _db.Blogs.FindAsync(blog.Id);
+
+            if (updatedBlog == null)
             {
-                Blog? targetBlog = _db.Blogs
-                    .FirstOrDefault(b => b.Id == updatedId);
-
-                if(targetBlog == null)
-                {
-                    throw new ArgumentNullException("The blog you are trying to update does not exist.");
-                }
-
-                targetBlog.Title = updatedBlog.Title;
-                targetBlog.Entry = updatedBlog.Entry;
-
-                _db.SaveChanges();
-            }
-            catch (ArgumentNullException ex)
-            {
-                HttpResponseMessage responseMessage = new HttpResponseMessage(HttpStatusCode.BadRequest);
-                responseMessage.Content = new StringContent(ex.Message);
-
-                return responseMessage;
-                
-            }
-            catch (SqlException)
-            {
-                HttpResponseMessage responseMessage = new HttpResponseMessage(HttpStatusCode.BadRequest);
-                responseMessage.Content = new StringContent("Blog didn't update, because database server didn't communicate.");
-
-                return responseMessage;
-            }
-            catch (Exception)
-            {
-                HttpResponseMessage responseMessage = new HttpResponseMessage(HttpStatusCode.BadRequest);
-                responseMessage.Content = new StringContent("Unknown error.");
-
-                return responseMessage;
+                return BadRequest("Target blog does not exist");
             }
 
-            return new HttpResponseMessage(HttpStatusCode.OK);
+            if (updatedBlog.IsArchived) {
+                return BadRequest("Traget blog is archived, you can not edit it");
+            }
+
+            updatedBlog.Title = blog.Title;
+            updatedBlog.Entry = blog.Entry;
+            await _db.SaveChangesAsync();
+
+            return Ok("Blog updated");
         }
 
         [HttpPost]
-        public HttpResponseMessage Delete(int blogId)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Delete([FromBody]int id)
         {
-            try
+            Blog? deletedBlog = await _db.Blogs.FindAsync(id);
+
+            if(deletedBlog == null)
             {
-                Blog? deletedBlog = _db.Blogs
-                    .FirstOrDefault(b => b.Id == blogId);
-
-                if(deletedBlog == null)
-                {
-                    throw new ArgumentNullException("The blog you are trying to archived does not exist.");
-                }
-
-                deletedBlog.IsArchived = true;
-                _db.SaveChanges();
-
-            }
-            catch(ArgumentNullException ex)
-            {
-                HttpResponseMessage responseMessage = new HttpResponseMessage(HttpStatusCode.BadRequest);
-                responseMessage.Content = new StringContent(ex.Message);
-
-                return responseMessage;
-            }
-            catch(SqlException ex)
-            {
-                HttpResponseMessage responseMessage = new HttpResponseMessage(HttpStatusCode.BadRequest);
-                responseMessage.Content = new StringContent("Blog didn't archive, because database server didn't communicate.");
-
-                return responseMessage;
-            }
-            catch (Exception)
-            {
-                HttpResponseMessage responseMessage = new HttpResponseMessage(HttpStatusCode.BadRequest);
-                responseMessage.Content = new StringContent("Unknown error.");
-
-                return responseMessage;
+                return NotFound("Blog does not exist");
             }
 
-            return new HttpResponseMessage(HttpStatusCode.OK);
+            deletedBlog.IsArchived = true;
+            await _db.SaveChangesAsync();
+
+            return Ok("Blog deleted");
         }
     }
 }

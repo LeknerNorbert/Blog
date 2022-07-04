@@ -3,8 +3,9 @@
     "",
     "\\BlogAPI",
     "\\BlogAPI\\Controllers",
-    "\\BlogAPI\\Models"
+    "\\BlogAPI\\Models",
+    "\\BlogAPI\\Models\\UserManagement"
   ],
-  "SelectedNode": "\\BlogAPI\\Controllers\\BlogController.cs",
+  "SelectedNode": "\\BlogAPI.sln",
   "PreviewInSolutionExplorer": false
 }

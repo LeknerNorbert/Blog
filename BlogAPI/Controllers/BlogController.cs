@@ -1,6 +1,5 @@
 ﻿using BlogAPI.Models;
 using BlogAPI.Models.UserManagement;
-using BlogAPI.Models.ViewModels;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,11 +21,10 @@ namespace BlogAPI.Controllers
             _db = db;
         }
 
-
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> Create([FromBody]BlogViewModel blog)
+        public async Task<IActionResult> Create([FromBody]BlogDto blog)
         {
             if (!ModelState.IsValid || blog == null)
             {
@@ -57,19 +55,19 @@ namespace BlogAPI.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> Read(int page)
         {
-            IEnumerable<BlogViewModel> blogs = await _db.Blogs
+            var blogs = await _db.Blogs
                 .Where(b => b.IsArchived == false)
                 .Include(b => b.Author)
                 .Skip(10 * (page - 1))
                 .Take(10)
-                .Select(b => new BlogViewModel
+                .Select(b => new 
                 {
                     Id = b.Id,
                     Title = b.Title,
                     Entry = b.Entry,
                     PublishDate = b.PublishDate,
                     AuthorId = b.Author.Id,
-                    AuthorNickname = b.Author.Nickname
+                    AuthorUsername = b.Author.Username
                 })
                 .ToListAsync();
 
@@ -96,7 +94,7 @@ namespace BlogAPI.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> Update([FromBody] BlogViewModel blog)
+        public async Task<IActionResult> Update([FromBody] BlogDto blog)
         {
             if (!ModelState.IsValid || blog == null)
             {

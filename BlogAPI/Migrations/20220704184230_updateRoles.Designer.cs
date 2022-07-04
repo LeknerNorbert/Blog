@@ -4,6 +4,7 @@ using BlogAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlogAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20220704184230_updateRoles")]
+    partial class updateRoles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,6 +23,21 @@ namespace BlogAPI.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
+
+            modelBuilder.Entity("AccountRole", b =>
+                {
+                    b.Property<int>("AccountsId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RolesId")
+                        .HasColumnType("int");
+
+                    b.HasKey("AccountsId", "RolesId");
+
+                    b.HasIndex("RolesId");
+
+                    b.ToTable("AccountRole");
+                });
 
             modelBuilder.Entity("BlogAPI.Models.Blog", b =>
                 {
@@ -62,27 +79,22 @@ namespace BlogAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<DateTime?>("CreatedDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<bool>("IsArchived")
                         .HasColumnType("bit");
 
-                    b.Property<byte[]>("PasswordHash")
-                        .HasColumnType("varbinary(max)");
+                    b.Property<string>("Nickname")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<byte[]>("PasswordSalt")
-                        .HasColumnType("varbinary(max)");
-
-                    b.Property<int?>("RoleId")
-                        .HasColumnType("int");
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Username")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("RoleId");
 
                     b.ToTable("Accounts");
                 });
@@ -95,16 +107,16 @@ namespace BlogAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<bool>("CanCreate")
+                    b.Property<bool>("CanCreateBlog")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("CanDelete")
+                    b.Property<bool>("CanDeleteBlog")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("CanRead")
+                    b.Property<bool>("CanReadBlog")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("CanUpdate")
+                    b.Property<bool>("CanUpdateBlog")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
@@ -113,6 +125,21 @@ namespace BlogAPI.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Roles");
+                });
+
+            modelBuilder.Entity("AccountRole", b =>
+                {
+                    b.HasOne("BlogAPI.Models.UserManagement.Account", null)
+                        .WithMany()
+                        .HasForeignKey("AccountsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BlogAPI.Models.UserManagement.Role", null)
+                        .WithMany()
+                        .HasForeignKey("RolesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("BlogAPI.Models.Blog", b =>
@@ -126,21 +153,7 @@ namespace BlogAPI.Migrations
 
             modelBuilder.Entity("BlogAPI.Models.UserManagement.Account", b =>
                 {
-                    b.HasOne("BlogAPI.Models.UserManagement.Role", "Role")
-                        .WithMany("Accounts")
-                        .HasForeignKey("RoleId");
-
-                    b.Navigation("Role");
-                });
-
-            modelBuilder.Entity("BlogAPI.Models.UserManagement.Account", b =>
-                {
                     b.Navigation("Blogs");
-                });
-
-            modelBuilder.Entity("BlogAPI.Models.UserManagement.Role", b =>
-                {
-                    b.Navigation("Accounts");
                 });
 #pragma warning restore 612, 618
         }

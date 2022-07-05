@@ -88,11 +88,7 @@ namespace BlogAPI.Controllers
             {
                 new Claim(ClaimTypes.NameIdentifier, loggedAccount.Id.ToString()),
                 new Claim(ClaimTypes.Name, loggedAccount.Username),
-                new Claim(ClaimTypes.Role, loggedAccount.Role.Name),
-                new Claim(ClaimTypes.Role, loggedAccount.Role.CanCreate.ToString()),
-                new Claim(ClaimTypes.Role, loggedAccount.Role.CanRead.ToString()),
-                new Claim(ClaimTypes.Role, loggedAccount.Role.CanUpdate.ToString()),
-                new Claim(ClaimTypes.Role, loggedAccount.Role.CanDelete.ToString())
+                new Claim(ClaimTypes.Role, loggedAccount.Role.Name)
             };
 
             // Kulcs, amiből később generáljuk az aláírást

@@ -1,5 +1,6 @@
 ﻿using BlogAPI.Models;
 using BlogAPI.Models.UserManagement;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +22,7 @@ namespace BlogAPI.Controllers
             _db = db;
         }
 
-        [HttpPost]
+        [HttpPost, Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Create([FromBody]BlogDto blog)
@@ -51,7 +52,7 @@ namespace BlogAPI.Controllers
             return Ok("Blog created");
         }
 
-        [HttpGet]
+        [HttpGet, Authorize(Roles = "User, Admin")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> Read(int page)
         {
@@ -74,7 +75,7 @@ namespace BlogAPI.Controllers
             return Ok(blogs);
         }
 
-        [HttpGet]
+        [HttpGet, Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ReadArchived()
@@ -91,7 +92,7 @@ namespace BlogAPI.Controllers
             return Ok(blogs);
         }
 
-        [HttpPost]
+        [HttpPost, Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Update([FromBody] BlogDto blog)
@@ -119,7 +120,7 @@ namespace BlogAPI.Controllers
             return Ok("Blog updated");
         }
 
-        [HttpPost]
+        [HttpPost, Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete([FromBody]int id)

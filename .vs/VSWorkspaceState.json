@@ -6,6 +6,6 @@
     "\\BlogAPI\\Models",
     "\\BlogAPI\\Models\\UserManagement"
   ],
-  "SelectedNode": "\\BlogAPI.sln",
+  "SelectedNode": "\\BlogAPI\\Program.cs",
   "PreviewInSolutionExplorer": false
 }
